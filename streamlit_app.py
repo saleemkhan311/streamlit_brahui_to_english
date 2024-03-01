@@ -131,9 +131,9 @@ def handle_key_error(input_sentence, lang):
 
 # Streamlit app
 def main():
-    st.title('English to Brahui Translation App')
+    st.title('Brahui to English Translation App')
     st.write("This is a BETA App Expected Accuracy is around 50%")
-    input_text = st.text_area('Enter English Text:', '')
+    input_text = st.text_area('Enter Brahui Text:', '')
     if st.button('Translate'):
         preprocessed_text = preprocess_text(input_text)
         clean = handle_key_error(preprocessed_text,input_lang)
