@@ -4,6 +4,11 @@ import re
 import string
 from string import digits
 
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+
+
+
 import torch
 from torch.autograd import Variable
 from lang import Lang
@@ -11,7 +16,7 @@ from EncoderRNN import EncoderRNN
 from AttnDecoderRNN import AttnDecoderRNN
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(device)
+#print(device)
 
 SOS_token = 0
 EOS_token = 1
@@ -65,7 +70,7 @@ def variable_from_sentence(lang, sentence):
 
 # Evaluation function
 def evaluate(encoder, decoder, sentence, max_length=MAX_LENGTH):
-    print("Input Sentence:", sentence)
+    #print("Input Sentence:", sentence)
     with torch.no_grad():
         input_tensor = tensorFromSentence(input_lang, sentence)
         input_length = input_tensor.size()[0]
@@ -101,7 +106,7 @@ def evaluate(encoder, decoder, sentence, max_length=MAX_LENGTH):
             if '<EOS>' in decoded_words:
                 decoded_words.remove('<EOS>')
 
-        print("Decoded Words:", decoded_words)
+        #print("Decoded Words:", decoded_words)
         return decoded_words, decoder_attentions[:di + 1]
     
 attn_model = 'general'
@@ -125,24 +130,27 @@ def handle_key_error(input_sentence, lang):
         except KeyError:
             pass  # Ignore the word if it is not found in the dictionary
     clean_sentence = ' '.join(clean_words)
-    print(input_sentence)
-    print(clean_sentence)
+    #print(input_sentence)
+    #print(clean_sentence)
     return clean_sentence
 
 # Streamlit app
 def main():
     st.title('Brahui to English Translation App')
     st.write("This is a BETA App Expected Accuracy is around 50%")
+    st.write("FastAPI Integrated")
     input_text = st.text_area('Enter Brahui Text:', '')
     if st.button('Translate'):
         preprocessed_text = preprocess_text(input_text)
         clean = handle_key_error(preprocessed_text,input_lang)
         output_words, decoder_attn = evaluate(encoder, decoder, clean)
-        print("Output words: ",output_words)
+        #print("Output words: ",output_words)
         # Check if each word is a string before joining
         output_text = ' '.join(output_words)
         #st.write('Translated Text:', output_text)
         st.write(f'<div style="font-size: 50px; text-align: center;">{output_text}</div>', unsafe_allow_html=True)
+
+    run_fastapi_app()
 
     # JavaScript to submit the form when Enter key is pressed
     st.markdown("""
@@ -156,6 +164,28 @@ def main():
     });
     </script>
     """, unsafe_allow_html=True)
+
+fastapi_app = FastAPI()
+
+class TranslationRequest(BaseModel):
+    text: str
+
+
+@fastapi_app.post("/translate/")
+async def translate_text(request: TranslationRequest):
+    input_text = request.text
+    preprocessed_text = preprocess_text(input_text)
+    clean = handle_key_error(preprocessed_text, input_lang)
+    output_words, _ = evaluate(encoder, decoder, clean)
+    output_text = ' '.join(output_words)
+    return {"translated_text": output_text}
+
+
+def run_fastapi_app():
+    import uvicorn
+    uvicorn.run(fastapi_app, host="0.0.0.0", port=8000)
+
+
 
 if __name__ == '__main__':
     main()
