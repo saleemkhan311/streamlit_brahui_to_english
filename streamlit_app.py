@@ -138,7 +138,6 @@ def handle_key_error(input_sentence, lang):
 def main():
     st.title('Brahui to English Translation App')
     st.write("This is a BETA App Expected Accuracy is around 50%")
-    st.write("FastAPI Integrated")
     input_text = st.text_area('Enter Brahui Text:', '')
     if st.button('Translate'):
         preprocessed_text = preprocess_text(input_text)
@@ -183,7 +182,7 @@ async def translate_text(request: TranslationRequest):
 
 def run_fastapi_app():
     import uvicorn
-    uvicorn.run(fastapi_app, host="0.0.0.0", port=8000)
+    uvicorn.run(fastapi_app, host="0.0.0.0", port=8080)
 
 
 
